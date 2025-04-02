@@ -1,0 +1,151 @@
+🔹 Step 1: Load and Preprocess the Data
+First, we download and extract the dataset.
+
+python
+Copy
+Edit
+import os
+import string
+import glob
+import unicodedata
+import torch
+import random
+import time
+import math
+import matplotlib.pyplot as plt
+
+# Download and extract the dataset
+!wget https://download.pytorch.org/tutorial/data.zip
+!unzip -q data.zip
+
+# List all language files
+all_files = glob.glob('data/names/*.txt')
+all_languages = [os.path.splitext(os.path.basename(f))[0] for f in all_files]
+
+# Read file content
+def find_files(path): return glob.glob(path)
+
+def unicode_to_ascii(s):
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', s)
+        if unicodedata.category(c) != 'Mn' and c in all_letters
+    )
+
+all_letters = string.ascii_letters + " .,;'"
+n_letters = len(all_letters)
+
+category_lines = {}
+all_categories = []
+
+# Read lines from each file
+for filename in find_files('data/names/*.txt'):
+    category = os.path.splitext(os.path.basename(filename))[0]
+    all_categories.append(category)
+    with open(filename, encoding='utf-8') as f:
+        lines = f.read().strip().split('\n')
+        category_lines[category] = [unicode_to_ascii(line) for line in lines]
+
+n_categories = len(all_categories)
+🔹 Step 2: Encode Names and Categories
+python
+Copy
+Edit
+# Letter to index and tensor
+def letter_to_index(letter):
+    return all_letters.find(letter)
+
+def letter_to_tensor(letter):
+    tensor = torch.zeros(1, n_letters)
+    tensor[0][letter_to_index(letter)] = 1
+    return tensor
+
+def line_to_tensor(line):
+    tensor = torch.zeros(len(line), 1, n_letters)
+    for li, letter in enumerate(line):
+        tensor[li][0][letter_to_index(letter)] = 1
+    return tensor
+🔹 Step 3: Define the LSTM Model
+python
+Copy
+Edit
+import torch.nn as nn
+
+class NameLSTM(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(NameLSTM, self).__init__()
+        self.hidden_size = hidden_size
+
+        self.lstm = nn.LSTM(input_size, hidden_size)
+        self.fc = nn.Linear(hidden_size, output_size)
+        self.softmax = nn.LogSoftmax(dim=1)
+
+    def forward(self, input_tensor):
+        lstm_out, _ = self.lstm(input_tensor)
+        output = self.fc(lstm_out[-1])
+        output = self.softmax(output)
+        return output
+🔹 Step 4: Train the Model
+python
+Copy
+Edit
+# Initialize model
+hidden_size = 128
+model = NameLSTM(n_letters, hidden_size, n_categories)
+
+criterion = nn.NLLLoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=0.005)
+
+# Random sample
+def random_training_example():
+    category = random.choice(all_categories)
+    line = random.choice(category_lines[category])
+    category_tensor = torch.tensor([all_categories.index(category)], dtype=torch.long)
+    line_tensor = line_to_tensor(line)
+    return category, line, category_tensor, line_tensor
+
+# Training function
+def train(category_tensor, line_tensor):
+    optimizer.zero_grad()
+    output = model(line_tensor)
+    loss = criterion(output, category_tensor)
+    loss.backward()
+    optimizer.step()
+    return output, loss.item()
+🔹 Step 5: Run Training Loop
+python
+Copy
+Edit
+n_iters = 10000
+print_every = 500
+all_losses = []
+
+for iter in range(1, n_iters + 1):
+    category, line, category_tensor, line_tensor = random_training_example()
+    output, loss = train(category_tensor, line_tensor)
+    all_losses.append(loss)
+
+    if iter % print_every == 0:
+        guess = all_categories[output.topk(1)[1].item()]
+        correct = '✓' if guess == category else f'✗ ({category})'
+        print(f'{iter} {loss:.4f} {line} -> {guess} {correct}')
+🔹 Step 6: Predict
+python
+Copy
+Edit
+def predict(input_line, n_predictions=3):
+    print(f'\n> {input_line}')
+    with torch.no_grad():
+        output = model(line_to_tensor(input_line))
+
+        topv, topi = output.topk(n_predictions, 1, True)
+        for i in range(n_predictions):
+            value = topv[0][i].item()
+            category_index = topi[0][i].item()
+            print(f'{all_categories[category_index]} ({value:.2f})')
+🔹 Sample Prediction
+python
+Copy
+Edit
+predict("Srinivasan")
+predict("O'Connor")
+predict("Yamamoto")
