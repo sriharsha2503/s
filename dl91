@@ -1,0 +1,129 @@
+🔧 Step-by-Step Implementation
+🔹 Step 1: Import Libraries
+python
+Copy
+Edit
+import torch
+import torch.nn as nn
+import numpy as np
+import random
+import string
+import unicodedata
+import matplotlib.pyplot as plt
+🔹 Step 2: Prepare the Dataset
+Use surnames from data/names/*.txt as training data.
+
+python
+Copy
+Edit
+import glob
+
+# Define valid characters
+all_letters = string.ascii_letters + " .,;'"
+n_letters = len(all_letters)
+
+# Convert Unicode to ASCII
+def unicode_to_ascii(s):
+    return ''.join(c for c in unicodedata.normalize('NFD', s)
+                   if unicodedata.category(c) != 'Mn' and c in all_letters)
+
+# Load all names into one big string
+all_names = []
+for filename in glob.glob('data/names/*.txt'):
+    with open(filename, encoding='utf-8') as f:
+        lines = f.read().strip().split('\n')
+        all_names += [unicode_to_ascii(line) for line in lines]
+
+text_data = ' '.join(all_names)
+print("Sample data:", text_data[:100])
+🔹 Step 3: Encode Characters
+python
+Copy
+Edit
+# Mapping from char to index
+char_to_idx = {ch: i for i, ch in enumerate(all_letters)}
+idx_to_char = {i: ch for ch, i in char_to_idx.items()}
+
+def char_tensor(char):
+    tensor = torch.zeros(n_letters)
+    tensor[char_to_idx[char]] = 1
+    return tensor
+
+def string_to_tensor(string):
+    tensor = torch.zeros(len(string), 1, n_letters)
+    for i, char in enumerate(string):
+        tensor[i][0][char_to_idx[char]] = 1
+    return tensor
+🔹 Step 4: Define LSTM Model
+python
+Copy
+Edit
+class CharLSTM(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(CharLSTM, self).__init__()
+        self.hidden_size = hidden_size
+        self.lstm = nn.LSTM(input_size, hidden_size)
+        self.fc = nn.Linear(hidden_size, output_size)
+        self.softmax = nn.LogSoftmax(dim=1)
+
+    def forward(self, input_seq, hidden=None):
+        lstm_out, hidden = self.lstm(input_seq, hidden)
+        output = self.fc(lstm_out[-1])
+        return self.softmax(output), hidden
+🔹 Step 5: Training Setup
+python
+Copy
+Edit
+def random_training_example(sequence_length=10):
+    start_idx = random.randint(0, len(text_data) - sequence_length - 1)
+    input_str = text_data[start_idx:start_idx+sequence_length]
+    target_char = text_data[start_idx+sequence_length]
+    return input_str, target_char
+
+def train(model, optimizer, criterion, n_iters=5000):
+    model.train()
+    for iter in range(n_iters):
+        input_str, target_char = random_training_example()
+        input_tensor = string_to_tensor(input_str)
+        target_tensor = torch.tensor([char_to_idx[target_char]])
+
+        optimizer.zero_grad()
+        output, _ = model(input_tensor)
+        loss = criterion(output, target_tensor)
+        loss.backward()
+        optimizer.step()
+
+        if iter % 500 == 0:
+            print(f"[{iter}] Loss: {loss.item():.4f} | Input: '{input_str}' -> Target: '{target_char}'")
+🔹 Step 6: Generate Next Character Prediction
+python
+Copy
+Edit
+def predict(model, input_str):
+    model.eval()
+    with torch.no_grad():
+        input_tensor = string_to_tensor(input_str)
+        output, _ = model(input_tensor)
+        topv, topi = output.topk(1)
+        predicted_char = idx_to_char[topi.item()]
+        print(f"Input: '{input_str}' -> Predicted next char: '{predicted_char}'")
+        return predicted_char
+🔹 Step 7: Run Everything
+python
+Copy
+Edit
+# Initialize model
+hidden_size = 128
+model = CharLSTM(n_letters, hidden_size, n_letters)
+
+# Loss and optimizer
+criterion = nn.NLLLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.003)
+
+# Train
+train(model, optimizer, criterion, n_iters=5000)
+
+# Predict a few samples
+predict(model, "Ramanatha")
+predict(model, "Alberti")
+predict(model, "Krzyszto")
