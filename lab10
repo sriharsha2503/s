@@ -1,0 +1,73 @@
+Lab No 10:
+Date:
+Auto-Encoders and Variational Encoder
+Objectives :
+In this lab, student will be able to
+1.
+2.
+Implement Auto-encoders for dimensionality reduction and feature Learning.
+Synthesize images, and data using Variational Auto-Encoders,
+Autoencoders represent a category of artificial neural networks employed in unsupervised learning
+tasks. Their core concept revolves around acquiring a condensed version of the input data, termed
+the "encoding," followed by reconstructing the initial input data from this representation with high
+fidelity. Structurally, an autoencoder comprises an encoder and a decoder, typically designed to be
+symmetric
+Autoencoders consists of the following components:
+Encoder: The encoder takes the input data and maps it to a lower-dimensional latent space
+representation. This is achieved through a series of hidden layers that progressively reduce the
+dimensionality of the input data. The output of the encoder is the compressed representation of the
+input data, often referred to as the "encoding" or "latent representation."
+Decoder: The decoder takes the compressed representation produced by the encoder and attempts
+to reconstruct the original input data from it. Like the encoder, the decoder consists of a series of
+hidden layers that progressively upscale the compressed representation back to the original
+dimensionality of the input data.
+Loss Function: During training, the goal of the autoencoder is to minimize the difference between
+the input data and the reconstructed output. This is typically done by defining a loss function, such
+as mean squared error (MSE) or Mean Absolute Error (MAE), and optimizing it using techniques
+like gradient descent. The autoencoder learns to reconstruct the input data by adjusting the
+parameters of both the encoder and the decoder.
+Autoencoders have several applications:
+71Dimensionality Reduction: By learning a compressed representation of the input data,
+autoencoders can be used for dimensionality reduction tasks, such as feature extraction or data
+visualization.
+Data Denoising: Autoencoders can learn to reconstruct clean versions of noisy input data. This
+makes them useful for denoising tasks, where the goal is to remove noise from signals or images.
+Anomaly Detection: Autoencoders can be trained on normal data and are expected to reconstruct
+it accurately. When presented with anomalous data during testing, they may fail to reconstruct it
+well, thus highlighting anomalies.
+Feature Learning: Autoencoders can learn a set of meaningful features from the input data without
+explicit supervision. These learned features can then be used for downstream tasks like
+classification or clustering.
+Variational Auto-Encoders:
+Variational Autoencoders (VAEs) are a type of generative model that extends the concept of
+traditional autoencoders. They introduce probabilistic modeling into the encoding process,
+allowing for more structured and controllable generation of new data samples. Here's an overview
+of VAEs:
+Probabilistic Encoding: Unlike traditional autoencoders, which directly map input data to a fixed-
+length encoding, VAEs map input data to a probability distribution in a latent space. This
+distribution is typically Gaussian with a mean and a variance.
+Reparameterization Trick: To enable efficient training via backpropagation, VAEs employ a
+reparameterization trick. Instead of directly sampling from the learned distribution, the model
+samples from a standard Gaussian distribution and then applies a transformation based on the mean
+and variance learned by the encoder.
+Generative Modeling: With the probabilistic encoding, VAEs can generate new data samples by
+sampling from the latent space distribution and passing the samples through the decoder. This
+allows for the generation of diverse and realistic-looking samples.
+Objective Function: VAEs are trained by maximizing a variational lower bound on the log-
+likelihood of the data. This objective function consists of two terms: the reconstruction loss, which
+measures how well the model reconstructs the input data, and the KL divergence between the
+72learned latent space distribution and a prior distribution (typically a standard Gaussian). The KL
+divergence term encourages the learned distribution to be close to the prior distribution, acting as
+a regularization term.
+Continuous Latent Space: VAEs learn a continuous and smooth latent space where each point
+corresponds to a generated sample. This allows for meaningful interpolations between points in
+the latent space, resulting in semantically meaningful transitions in the generated samples.
+Applications: VAEs are widely used for generative modelling tasks such as image generation, text
+generation, and data imputation. They have also been applied in semi-supervised learning settings,
+where they can leverage both labelled and unlabelled data to improve model performance.
+Exercise questions
+1. Implement Auto-Encoder for latent representation of MNIST dataset.
+2. Implement VAE for synthesizing digits using MNIST training data.
+73#Write the dataloader for MNIST dataset
+……………………………
+…………………………
